@@ -42,9 +42,11 @@ var groupPath = function (d) { // calculate convex hull
             .join("L")
         + "Z";
 }
+var t0, t1;
 // Vinh Function
 var gcell, gcells, gnode, ggroup, ggroups, gcoords, gcen, gregion, gregions, clusterData, coms = [], paths = [], text = [];
 function createForceWithVorenon(m,svg,callback) {
+    t0 = performance.now();
     var graph = graphByMonths[2][selectedCut];
     let newnodes = JSON.parse(JSON.stringify(graph.nodes));
     let newlinks = JSON.parse(JSON.stringify(graph.links));
@@ -65,13 +67,32 @@ function createForceWithVorenon(m,svg,callback) {
     //     .attr("width", width)
     //     .attr("height", height);
     let svg1 = svg.append("g").attr("transform", "translate(" + 210 + "," + 350 + ")");
+    function start() {
+        var ticksPerRender = 3;
+        requestAnimationFrame(function render() {
+            for (var i = 0; i < ticksPerRender; i++) {
+                force.tick();
+            }
+            links
+                .attr('x1', function(d) { return d.source.x; })
+                .attr('y1', function(d) { return d.source.y; })
+                .attr('x2', function(d) { return d.target.x; })
+                .attr('y2', function(d) { return d.target.y; });
+            nodes
+                .attr('cx', function(d) { return d.x; })
+                .attr('cy', function(d) { return d.y; });
 
+            if (force.alpha() > 0) {
+                requestAnimationFrame(render);
+            }
+        })
+    }
     // create new force
     var newforce = d3.layout.force()
         .nodes(fnodes)
         .links(flinks)
         .size([width, height])
-        .charge(-200)
+        .charge(-300)
         .on("tick", tick)
         .on("end", end)
 
@@ -105,6 +126,8 @@ function createForceWithVorenon(m,svg,callback) {
     // for (let i = 0; i < newforce.nodes().length; i++){
     //
     // }
+
+
 
     clusterData = newforce.nodes();  // PROTOTYPE ============================
 
@@ -218,6 +241,7 @@ function createForceWithVorenon(m,svg,callback) {
     }
 
 }
+
 function bound(svg1){       // Draw convex hull
 
     let width = 600,
@@ -235,7 +259,7 @@ function bound(svg1){       // Draw convex hull
         .enter()
         .append("g")
         .attr("fill",function(d,i) { return color(i); })
-        .attr("opacity","0.6");
+        .attr("opacity","0.8");
 
     var region = regions.append("path")
         .data(voronoi.polygons(gcen));
@@ -292,11 +316,11 @@ function bound(svg1){       // Draw convex hull
     // get sites (middle point) for every
     // paths[i] contains all point in community i
     // done getting points
-
-
-
-
+    t1 = performance.now();
+    console.log("Call took " + ((t1 - t0)/1000).toFixed(0) + " seconds.")
 }
+
+console.log("Call to doSomething took " + (t1 - t0) + " milliseconds.")
 function wordCluster(){
 //     svgW = svg.append("g")
 //                 .attr("class", "svgW")
