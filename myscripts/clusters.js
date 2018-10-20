@@ -8,7 +8,7 @@ var allSVG = [];
 function updateSubLayout(nodes, links, m) {
 
     //console.log("updateSubLayout:"+m);
-    if(m==3){
+    if(m===3){
 
         createForceWithVorenon(m,svg,bound);
 

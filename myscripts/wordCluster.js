@@ -14,7 +14,7 @@ var sizeW = 800;
 // var nodes;
 // var links;
 
-var groupPath = function (d) { // calculate convex hull
+var groupPath = function (d) { // calculate convex hull1
     var fakePoints = [];
     if (d.values.length == 2) {
         //[dx, dy] is the direction vector of the line
@@ -43,8 +43,9 @@ var groupPath = function (d) { // calculate convex hull
         + "Z";
 }
 var t0, t1;
+
 // Vinh Function
-var gcell, gcells, gnode, ggroup, ggroups, gcoords, gcen, gregion, gregions, clusterData, coms = [], paths = [], text = [];
+var gcell, gcells, gnode, ggroup, ggroups, gcoords, gcen, gregion, gregions, clusterData = [], textData, coms = [];
 function createForceWithVorenon(m,svg,callback) {
     t0 = performance.now();
     var graph = graphByMonths[2][selectedCut];
@@ -52,7 +53,6 @@ function createForceWithVorenon(m,svg,callback) {
     let newlinks = JSON.parse(JSON.stringify(graph.links));
     let fnodes = newnodes;      // new data
     let flinks = newlinks;
-
 
     //create new svg
     let width = 600,
@@ -63,9 +63,7 @@ function createForceWithVorenon(m,svg,callback) {
         .y(function(d) { return d.y; })
         .extent([[-1, -1], [width + 1, height + 1]]);
 
-    // let svg = d3.select("body").append("svg")
-    //     .attr("width", width)
-    //     .attr("height", height);
+
     let svg1 = svg.append("g").attr("transform", "translate(" + 210 + "," + 350 + ")");
     function start() {
         var ticksPerRender = 3;
@@ -120,16 +118,10 @@ function createForceWithVorenon(m,svg,callback) {
             return d.name;
         })
         .attr("class", "node1")
-        .attr("opacity", 0);
-        // .attr("class", "link");
-    // let pathGroup = 0[];
-    // for (let i = 0; i < newforce.nodes().length; i++){
-    //
-    // }
+        .attr("opacity", 0.6);
 
 
-
-    clusterData = newforce.nodes();  // PROTOTYPE ============================
+    textData = JSON.parse(JSON.stringify(newforce.nodes()));  // PROTOTYPE ============================
 
     function tick() {
         let alpha = newforce.alpha();
@@ -273,54 +265,79 @@ function bound(svg1){       // Draw convex hull
         .text((d,i) => i)
         .attr("transform", d => "translate("+d.x +","+d.y+")");
 
-    // var hullArray = [];
-    // var hull = svg1.append("path")
-    //     .attr("class", "hullFrame")
-    //     .attr("transform", "translate(" + 210 + "," + 350 + ")");
-    //
-    // paths.forEach( function(vertices, index) {
-    //     hullArray[index] = [];
-    //     hullArray[index] = hullArray[index].concat(hull.datum(d3.geom.hull(vertices)).attr("d", function(d) { return "M" + d.join("L") + "Z"; })[0][0].__data__);
-    //
-    // });
-    // var vertices = paths[2];
-    // hull.datum(d3.geom.hull(vertices)).attr("d", function(d) { return "M" + d.join("L") + "Z"; });
-    // console.log(hullArray);
-    gnode = voronoi.polygons(gcen);
+    gnode = JSON.parse(JSON.stringify(voronoi.polygons(gcen)));
     gregion = region;
     gregions = regions;
 
-    // let numClass = 0;
-    // get number of classes
-    // for (let i = 0; i < cells[0].length; i ++){
-    //     // get max community
-    //     coms.push(cells[0][i].__data__["community"]);
-    //     numClass = d3.max(coms);
-    // }
+    var pathway = JSON.parse(JSON.stringify(voronoi.polygons(gcen)));
 
-    // get coordinates for every point in each community
-    // for (let i = 0; i < numClass+1; i++){       // 0 -> 6 (6 groups/communities)
-    //     paths[i] = [];
-    //     text[i] = [];
-    //     for (let j = 0; j < cells[0].length; j ++){     // 0 -> 36
-    //         if (i === cells[0][j].__data__["community"]){
-    //             paths[i] = paths[i].concat(cells[0][j].firstElementChild.__data__);
-    //             text[i] = text[i].concat(cells[0][j].__data__);
-    //             // add to each paths[i] all the points
-    //         }
-    //     }
-    // }
-    // console.log(paths);
-    // console.log(text);
 
-    // get sites (middle point) for every
-    // paths[i] contains all point in community i
+    // sort words by community
+    for (let i in gnode){
+
+        console.log(i);
+    }
+
+    for (let i in gnode){
+        let obj = {};
+        var array = [];
+        for (let j in textData){
+            if (textData[j]["community"] === i){     // collect data by community
+                array.push(textData[j]);
+                console.log("Hi");
+            }
+        }
+        obj.path = gnode[i];
+        obj.words = array;
+        clusterData.push(obj);
+    }
+
+    // console.log(clusterData);
     // done getting points
     t1 = performance.now();
-    console.log("Call took " + ((t1 - t0)/1000).toFixed(0) + " seconds.")
+    console.log("Call took " + ((t1 - t0)/1000).toFixed(0) + " seconds.");
 }
+// var hullArray = [];
+// var hull = svg1.append("path")
+//     .attr("class", "hullFrame")
+//     .attr("transform", "translate(" + 210 + "," + 350 + ")");
+//
+// paths.forEach( function(vertices, index) {
+//     hullArray[index] = [];
+//     hullArray[index] = hullArray[index].concat(hull.datum(d3.geom.hull(vertices)).attr("d", function(d) { return "M" + d.join("L") + "Z"; })[0][0].__data__);
+//
+// });
+// var vertices = paths[2];
+// hull.datum(d3.geom.hull(vertices)).attr("d", function(d) { return "M" + d.join("L") + "Z"; });
+// console.log(hullArray);
 
-console.log("Call to doSomething took " + (t1 - t0) + " milliseconds.")
+
+// let numClass = 0;
+// get number of classes
+// for (let i = 0; i < cells[0].length; i ++){
+//     // get max community
+//     coms.push(cells[0][i].__data__["community"]);
+//     numClass = d3.max(coms);
+// }
+
+// get coordinates for every point in each community
+// for (let i = 0; i < numClass+1; i++){       // 0 -> 6 (6 groups/communities)
+//     paths[i] = [];
+//     text[i] = [];
+//     for (let j = 0; j < cells[0].length; j ++){     // 0 -> 36
+//         if (i === cells[0][j].__data__["community"]){
+//             paths[i] = paths[i].concat(cells[0][j].firstElementChild.__data__);
+//             text[i] = text[i].concat(cells[0][j].__data__);
+//             // add to each paths[i] all the points
+//         }
+//     }
+// }
+// console.log(paths);
+// console.log(text);
+
+// get sites (middle point) for every
+// paths[i] contains all point in community i
+
 function wordCluster(){
 //     svgW = svg.append("g")
 //                 .attr("class", "svgW")
