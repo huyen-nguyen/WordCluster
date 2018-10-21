@@ -45,9 +45,13 @@ var groupPath = function (d) { // calculate convex hull1
 var t0, t1;
 
 // Vinh Function
-var gcell, gcells, gnode, ggroup, ggroups, gcoords, gcen, clusterData = [], textData;
-function createForceWithVorenon(m,svg,callback) {
-    t0 = performance.now();
+var gcell, gcells, gnode, gcen, clusterData = [], textData, coms = [];
+
+function createForceWithVorenon(m, svg, callback) {
+    // t0 = performance.now();
+    // get time, put the below 2 lines after the last call
+    // t1 = performance.now();
+    // console.log("Call took " + ((t1 - t0)/1000).toFixed(0) + " seconds.");
     var graph = graphByMonths[2][selectedCut];
     let newnodes = JSON.parse(JSON.stringify(graph.nodes));
     let newlinks = JSON.parse(JSON.stringify(graph.links));
@@ -57,14 +61,19 @@ function createForceWithVorenon(m,svg,callback) {
     //create new svg
     let width = 600,
         height = 600;
-    let color =d3.scale.category10();
+    let color = d3.scale.category10();
     let voronoi = d3.voronoi()
-        .x(function(d) { return d.x; })
-        .y(function(d) { return d.y; })
+        .x(function (d) {
+            return d.x;
+        })
+        .y(function (d) {
+            return d.y;
+        })
         .extent([[-1, -1], [width + 1, height + 1]]);
 
 
     let svg1 = svg.append("g").attr("transform", "translate(" + 210 + "," + 350 + ")");
+
     function start() {
         var ticksPerRender = 3;
         requestAnimationFrame(function render() {
@@ -72,19 +81,32 @@ function createForceWithVorenon(m,svg,callback) {
                 force.tick();
             }
             links
-                .attr('x1', function(d) { return d.source.x; })
-                .attr('y1', function(d) { return d.source.y; })
-                .attr('x2', function(d) { return d.target.x; })
-                .attr('y2', function(d) { return d.target.y; });
+                .attr('x1', function (d) {
+                    return d.source.x;
+                })
+                .attr('y1', function (d) {
+                    return d.source.y;
+                })
+                .attr('x2', function (d) {
+                    return d.target.x;
+                })
+                .attr('y2', function (d) {
+                    return d.target.y;
+                });
             nodes
-                .attr('cx', function(d) { return d.x; })
-                .attr('cy', function(d) { return d.y; });
+                .attr('cx', function (d) {
+                    return d.x;
+                })
+                .attr('cy', function (d) {
+                    return d.y;
+                });
 
             if (force.alpha() > 0) {
                 requestAnimationFrame(render);
             }
         })
     }
+
     // create new force
     var newforce = d3.layout.force()
         .nodes(fnodes)
@@ -102,9 +124,13 @@ function createForceWithVorenon(m,svg,callback) {
     var cells = svg1.selectAll()
         .data(newforce.nodes())
         .enter().append("g")
-        .attr("opacity","0.5")
-        .attr("fill",function(d) { return color(d.community); })
-        .attr("class",function(d) { return d.community });
+        .attr("opacity", "0.5")
+        .attr("fill", function (d) {
+            return color(d.community);
+        })
+        .attr("class", function (d) {
+            return d.community
+        });
 
     gcells = cells;
     var cell = cells.append("path")
@@ -118,24 +144,26 @@ function createForceWithVorenon(m,svg,callback) {
             return d.name;
         })
         .attr("class", "node1")
-        .attr("opacity", 0.6);
+        .attr("fill", function (d) {
+            return color(d.community);
+        })
+        .attr("opacity", 1);
 
-
-    textData = JSON.parse(JSON.stringify(newforce.nodes()));  // PROTOTYPE ============================
+    textData = JSON.parse(JSON.stringify(newforce.nodes()));  // PROTOTYPE
 
     function tick() {
         let alpha = newforce.alpha();
-        let coords ={};
+        let coords = {};
         let groups = [];
 
         // sort the nodes into groups:
-        node.each(function(d) {
-            if (groups.indexOf(d.community) == -1 ) {
+        node.each(function (d) {
+            if (groups.indexOf(d.community) == -1) {
                 groups.push(d.community);
                 coords[d.community] = [];
             }
 
-            coords[d.community].push({x:d.x,y:d.y});
+            coords[d.community].push({x: d.x, y: d.y});
         })
 
         // get the centroid of each group:
@@ -150,30 +178,28 @@ function createForceWithVorenon(m,svg,callback) {
             var cy = 0;
             var ty = 0;
 
-            groupNodes.forEach(function(d) {
+            groupNodes.forEach(function (d) {
                 tx += d.x;
                 ty += d.y;
             })
 
-            cx = tx/n;
-            cy = ty/n;
+            cx = tx / n;
+            cy = ty / n;
 
             centroids[group] = {x: cx, y: cy}
         }
-        ggroup = group;
-        ggroups = groups;
-        gcoords = coords;
+
         gcen = centroids;       // An object
 
         // don't modify points close the the group centroid:
         var minDistance = 10;
 
         if (alpha < 0.1) {
-            minDistance = 10 + (1000 * (0.1-alpha))
+            minDistance = 10 + (1000 * (0.1 - alpha))
         }
 
         // adjust each point if needed towards group centroid:
-        node.each(function(d) {
+        node.each(function (d) {
             var cx = centroids[d.community].x;
             var cy = centroids[d.community].y;
             var x = d.x;
@@ -181,31 +207,36 @@ function createForceWithVorenon(m,svg,callback) {
             var dx = cx - x;
             var dy = cy - y;
 
-            var r = Math.sqrt(dx*dx+dy*dy)
+            var r = Math.sqrt(dx * dx + dy * dy)
 
-            if (r>minDistance) {
+            if (r > minDistance) {
                 d.x = x * 0.9 + cx * 0.1;
                 d.y = y * 0.9 + cy * 0.1;
             }
         })
         cell = cell.data(voronoi.polygons(newforce.nodes())).attr("d", renderCell);
 
-        node.attr("x", function(d) { return d.x; })
-            .attr("y", function(d) { return d.y; });
+        node.attr("x", function (d) {
+            return d.x;
+        })
+            .attr("y", function (d) {
+                return d.y;
+            });
         // link.attr("x1", function(d) { return d.source.x; })
         //     .attr("y1", function(d) { return d.source.y; })
         //     .attr("x2", function(d) { return d.target.x; })
         //     .attr("y2", function(d) { return d.target.y; });
     }
+
     function end() {
         // update link
-        flinks.forEach(function (l,i) {
-            newforce.nodes().forEach(function (n,j) {
-                if(l.source.id ==n.id){
+        flinks.forEach(function (l, i) {
+            newforce.nodes().forEach(function (n, j) {
+                if (l.source.id == n.id) {
                     l.source.x = n.x;
                     l.source.y = n.y;
                 }
-                if(l.target.id ==n.id){
+                if (l.target.id == n.id) {
                     l.target.x = n.x;
                     l.target.y = n.y;
                 }
@@ -214,13 +245,21 @@ function createForceWithVorenon(m,svg,callback) {
         var link = svg1.selectAll(".link")
             .data(flinks)
             .enter().append("line")
-            .attr("stroke-width",0)
-            .attr("stroke","black");
+            .attr("stroke-width", 0)
+            .attr("stroke", "black");
 
-        link.attr("x1", function(d) { return d.source.x; })
-            .attr("y1", function(d) { return d.source.y; })
-            .attr("x2", function(d) { return d.target.x; })
-            .attr("y2", function(d) { return d.target.y; });
+        link.attr("x1", function (d) {
+            return d.source.x;
+        })
+            .attr("y1", function (d) {
+                return d.source.y;
+            })
+            .attr("x2", function (d) {
+                return d.target.x;
+            })
+            .attr("y2", function (d) {
+                return d.target.y;
+            });
         // group.attr("d", groupPath);
         console.log("End of force!");
         callback(svg1);
@@ -228,20 +267,25 @@ function createForceWithVorenon(m,svg,callback) {
         // console.log(flinks);
         // console.log(fnodes);
     };
+
     function renderCell(d) {
         return d == null ? null : "M" + d.join("L") + "Z";
     }
 
 }
 
-function bound(svg1){       // Draw convex hull
+function bound(svg1) {       // Draw convex hull
 
     let width = 600,
         height = 600;
-    let color =d3.scale.category10();
+    let color = d3.scale.category10();
     let voronoi = d3.voronoi()
-        .x(function(d) { return d.x; })
-        .y(function(d) { return d.y; })
+        .x(function (d) {
+            return d.x;
+        })
+        .y(function (d) {
+            return d.y;
+        })
         .extent([[-1, -1], [width + 1, height + 1]]);
 
 
@@ -250,84 +294,45 @@ function bound(svg1){       // Draw convex hull
         .data(gcen)
         .enter()
         .append("g")
-        .attr("fill",function(d,i) { return color(i); })
-        .attr("opacity","0.8");
+        .attr("fill", function (d, i) {
+            return color(i);
+        })
+        .attr("opacity", "0.8");
 
     var region = regions.append("path")
         .data(voronoi.polygons(gcen));
 
     region = region.data(voronoi.polygons(gcen)).attr("d", d => `M${d.join("L")}Z`);
 
+    gnode = JSON.parse(JSON.stringify(voronoi.polygons(gcen)));
+
+    // Categorized words: array "coms"
+    for (let i in gnode) {
+        coms[i] = [];
+        for (let j in textData) {
+           if (textData[j]["community"] == i) {
+               coms[i].push(textData[j]);
+           }
+       }
+       // obj is an intermadiate variable, to store each element in clusterData
+        let obj = {};
+        obj.path = gnode[i];
+        obj.words = coms[i];
+        clusterData.push(obj);
+    }
+
+    // denote the area's index
     svg1.append("g")
         .selectAll("text")
         .data(gcen)
         .enter().append("text")
-        .text((d,i) => i)
-        .attr("transform", d => "translate("+d.x +","+d.y+")");
+        .text((d, i) => i + " (" + coms[i].length +")")
+        .attr("transform", d => "translate(" + d.x + "," + d.y + ")");
 
-    gnode = JSON.parse(JSON.stringify(voronoi.polygons(gcen)));
-
-    for (let i in gnode){
-        let obj = {};
-        let array = [];
-        for (let j in textData){
-            if (textData[j]["community"] == i){     // collect data by community
-                array.push(textData[j]);
-                console.log("Hi, " + textData[j]["community"] +" = "+ i);
-            }
-        }
-        obj.path = gnode[i];
-        obj.words = array;
-        clusterData.push(obj);
-    }
-
-    // console.log(clusterData);
-    // done getting points
-    t1 = performance.now();
-    console.log("Call took " + ((t1 - t0)/1000).toFixed(0) + " seconds.");
 }
-// var hullArray = [];
-// var hull = svg1.append("path")
-//     .attr("class", "hullFrame")
-//     .attr("transform", "translate(" + 210 + "," + 350 + ")");
-//
-// paths.forEach( function(vertices, index) {
-//     hullArray[index] = [];
-//     hullArray[index] = hullArray[index].concat(hull.datum(d3.geom.hull(vertices)).attr("d", function(d) { return "M" + d.join("L") + "Z"; })[0][0].__data__);
-//
-// });
-// var vertices = paths[2];
-// hull.datum(d3.geom.hull(vertices)).attr("d", function(d) { return "M" + d.join("L") + "Z"; });
-// console.log(hullArray);
 
 
-// let numClass = 0;
-// get number of classes
-// for (let i = 0; i < cells[0].length; i ++){
-//     // get max community
-//     coms.push(cells[0][i].__data__["community"]);
-//     numClass = d3.max(coms);
-// }
-
-// get coordinates for every point in each community
-// for (let i = 0; i < numClass+1; i++){       // 0 -> 6 (6 groups/communities)
-//     paths[i] = [];
-//     text[i] = [];
-//     for (let j = 0; j < cells[0].length; j ++){     // 0 -> 36
-//         if (i === cells[0][j].__data__["community"]){
-//             paths[i] = paths[i].concat(cells[0][j].firstElementChild.__data__);
-//             text[i] = text[i].concat(cells[0][j].__data__);
-//             // add to each paths[i] all the points
-//         }
-//     }
-// }
-// console.log(paths);
-// console.log(text);
-
-// get sites (middle point) for every
-// paths[i] contains all point in community i
-
-function wordCluster(){
+function wordCluster() {
 //     svgW = svg.append("g")
 //                 .attr("class", "svgW")
 //                 .attr("transform", "translate(" + 0 + "," + 0 + ")");
