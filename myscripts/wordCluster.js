@@ -318,7 +318,7 @@ function bound(svg1) {       // Draw convex hull
         let obj = {};
         obj.path = gnode[i];
         obj.words = coms[i];
-        clusterData.push(obj);
+        clusterData.push(obj);      // now we have clusterData
     }
 
     // denote the area's index
@@ -330,7 +330,10 @@ function bound(svg1) {       // Draw convex hull
         .attr("transform", d => "translate(" + d.x + "," + d.y + ")");
 
 }
+function buildFontScale(clusterData){
+    
 
+}
 
 function wordCluster() {
 //     svgW = svg.append("g")
