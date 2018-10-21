@@ -45,7 +45,7 @@ var groupPath = function (d) { // calculate convex hull1
 var t0, t1;
 
 // Vinh Function
-var gcell, gcells, gnode, ggroup, ggroups, gcoords, gcen, gregion, gregions, clusterData = [], textData, coms = [];
+var gcell, gcells, gnode, ggroup, ggroups, gcoords, gcen, clusterData = [], textData;
 function createForceWithVorenon(m,svg,callback) {
     t0 = performance.now();
     var graph = graphByMonths[2][selectedCut];
@@ -266,25 +266,14 @@ function bound(svg1){       // Draw convex hull
         .attr("transform", d => "translate("+d.x +","+d.y+")");
 
     gnode = JSON.parse(JSON.stringify(voronoi.polygons(gcen)));
-    gregion = region;
-    gregions = regions;
-
-    var pathway = JSON.parse(JSON.stringify(voronoi.polygons(gcen)));
-
-
-    // sort words by community
-    for (let i in gnode){
-
-        console.log(i);
-    }
 
     for (let i in gnode){
         let obj = {};
-        var array = [];
+        let array = [];
         for (let j in textData){
-            if (textData[j]["community"] === i){     // collect data by community
+            if (textData[j]["community"] == i){     // collect data by community
                 array.push(textData[j]);
-                console.log("Hi");
+                console.log("Hi, " + textData[j]["community"] +" = "+ i);
             }
         }
         obj.path = gnode[i];
