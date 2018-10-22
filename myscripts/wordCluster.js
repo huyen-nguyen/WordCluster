@@ -331,7 +331,7 @@ function bound(svg1) {       // Draw convex hull
 
 }
 function buildFontScale(clusterData){
-    
+
 
 }
 
