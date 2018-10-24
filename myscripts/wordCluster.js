@@ -46,6 +46,7 @@ var t0, t1;
 
 // Vinh Function
 var gcell, gcells, gnode, gcen, clusterData = [], textData, coms = [];
+var cluster_data, text_data;
 
 function createForceWithVorenon(m, svg, callback) {
     // t0 = performance.now();
@@ -274,7 +275,7 @@ function createForceWithVorenon(m, svg, callback) {
 
 }
 
-function bound(svg1) {       // Draw convex hull
+function bound(svg1) {
 
     let width = 600,
         height = 600;
@@ -329,11 +330,102 @@ function bound(svg1) {       // Draw convex hull
         .text((d, i) => i + " (" + coms[i].length +")")
         .attr("transform", d => "translate(" + d.x + "," + d.y + ")");
 
-}
-function buildFontScale(clusterData){
+    console.log("Cluster data are ready.");
+    // Clone data
+    cluster_data = JSON.parse(JSON.stringify(clusterData));
+    text_data = JSON.parse(JSON.stringify(textData));
+
+    // Initiate data
+    let maxFontSize = 20,
+        minFontSize = 8,
+        font = "Arial",
+        fontScale = d3.scale.linear(),
+        canvas = cloudCanvas,
+        canvasWidth = 1 << 11,
+        canvasHeight = 1 << 11;
+        ;
+
+    buildFontScale(text_data);
+    buildBoxes(cluster_data);
+    getImageData();
+
+    function buildFontScale(textData){
+        let maxFrequency = 0;
+        let minFrequency = Number.MAX_SAFE_INTEGER;
+
+        let max, min;
+        let freq = textData.map(d => d.count);
+        max = Math.max(...freq);
+        min = Math.min(...freq);
+
+        if(maxFrequency < max) maxFrequency = max;
+        if(minFrequency > min) minFrequency = min;
+
+        fontScale.domain([minFrequency, maxFrequency]).range([minFontSize, maxFontSize]);
+    }
+
+    function buildBoxes(clusterData){
+        let minX, maxX, minY, maxY, boxWidth, boxHeight;
+        let boxes = [];
+
+        clusterData.map(d => d.path).forEach((d) => {
+            let x = [], y = [];
+            for (let i in d){
+                x.push(d[i][0]);
+                y.push(d[i][1])
+
+            }
+            maxX = Math.max(...x);
+            minX = Math.min(...x);
+            maxY = Math.max(...y);
+            minY = Math.min(...y);
+            boxWidth = maxX - minX;
+            boxHeight = maxY - minY;
+
+            let box = {};
+            box.x = minX;
+            box.y = minY;
+            box.maxX = maxX;
+            box.minX = minX;
+            box.maxY = maxY;
+            box.minY = minY;
+            box.boxWidth = boxWidth;
+            box.boxHeight = boxHeight;
+
+            boxes.push(box);
+
+        });
+        clusterData.forEach((d,i) => d.box = boxes[i]);
+        return clusterData;
+
+    }
+
+    function getContext(canvas) {
+        canvas.width = canvasWidth;
+        canvas.height = canvasHeight;
+
+        let context = canvas.getContext("2d");
+        context.fillStyle = context.strokeStyle = "red";
+        context.textAlign = "center";
+        context.textBaseline = "middle";
+        return context;
+
+    }
+
+    function getImageData(){
+        let c = getContext(canvas());       // created canvas and its context
+
+    }
 
 
+
+
+
+    function cloudCanvas() {
+        return document.createElement("canvas");
+    }
 }
+
 
 function wordCluster() {
 //     svgW = svg.append("g")
